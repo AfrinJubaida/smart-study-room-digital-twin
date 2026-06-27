@@ -145,8 +145,8 @@ smart-study-room-digital-twin/
 ├── style.css
 ├── app.js
 ├── README.md
-└── docs/
-    ├── technical-write-up
+└── doc/
+    ├── Smart_Study_Room_Digital_Twin.pdf
 
 
 ## Running the Project
