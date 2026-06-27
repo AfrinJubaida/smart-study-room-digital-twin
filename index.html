@@ -12,24 +12,32 @@
 
     <link rel="stylesheet" href="style.css">
 
-    <!-- Babylon.js engine -->
+    <!-- Babylon.js core -->
     <script src="https://cdn.babylonjs.com/babylon.js"></script>
-    <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+
+    <!-- Dedicated Gaussian-splat loader -->
+    <script src="https://cdn.babylonjs.com/loaders/babylon.splatFileLoader.js"></script>
 </head>
 
 <body>
+    <!-- Loading screen -->
     <div id="loadingScreen">
         <h2>Loading Smart Study Room</h2>
-        <p id="loadingStatus">Preparing Gaussian splat…</p>
+        <p id="loadingStatus">
+            Preparing the Gaussian-splat room…
+        </p>
     </div>
 
+    <!-- Babylon.js canvas -->
     <canvas id="renderCanvas"></canvas>
 
+    <!-- Header -->
     <header id="topBar">
         <div>
             <h1>Smart Study Room Digital Twin</h1>
             <p>
-                Live environmental monitoring and decision support
+                Live environmental monitoring and
+                decision-support prototype
             </p>
         </div>
 
@@ -39,60 +47,131 @@
         </div>
     </header>
 
-    <!-- Spatial sensor labels -->
-    <div id="temperatureMarker" class="sensor-marker">
-        <div class="sensor-title">Temperature</div>
-        <div id="temperatureValue" class="sensor-value">
+    <!-- Temperature overlay -->
+    <div
+        id="temperatureMarker"
+        class="sensor-marker"
+    >
+        <div class="sensor-title">
+            Temperature
+        </div>
+
+        <div
+            id="temperatureValue"
+            class="sensor-value"
+        >
             23.4 °C
         </div>
-        <div id="temperatureStatus" class="sensor-status">
+
+        <div
+            id="temperatureStatus"
+            class="sensor-status"
+        >
             Comfortable
         </div>
     </div>
 
-    <div id="humidityMarker" class="sensor-marker">
-        <div class="sensor-title">Humidity</div>
-        <div id="humidityValue" class="sensor-value">
+    <!-- Humidity overlay -->
+    <div
+        id="humidityMarker"
+        class="sensor-marker"
+    >
+        <div class="sensor-title">
+            Humidity
+        </div>
+
+        <div
+            id="humidityValue"
+            class="sensor-value"
+        >
             47%
         </div>
-        <div id="humidityStatus" class="sensor-status">
+
+        <div
+            id="humidityStatus"
+            class="sensor-status"
+        >
             Normal
         </div>
     </div>
 
-    <div id="occupancyMarker" class="sensor-marker">
-        <div class="sensor-title">Occupancy</div>
-        <div id="occupancyValue" class="sensor-value">
+    <!-- Occupancy overlay -->
+    <div
+        id="occupancyMarker"
+        class="sensor-marker"
+    >
+        <div class="sensor-title">
+            Occupancy
+        </div>
+
+        <div
+            id="occupancyValue"
+            class="sensor-value"
+        >
             2 people
         </div>
-        <div id="occupancyStatus" class="sensor-status">
+
+        <div
+            id="occupancyStatus"
+            class="sensor-status"
+        >
             Occupied
         </div>
     </div>
 
-    <div id="lightMarker" class="sensor-marker">
-        <div class="sensor-title">Desk Lighting</div>
-        <div id="lightValue" class="sensor-value">
-            310 lux
+    <!-- Light overlay -->
+    <div
+        id="lightMarker"
+        class="sensor-marker"
+    >
+        <div class="sensor-title">
+            Desk Lighting
         </div>
-        <div id="lightStatus" class="sensor-status">
+
+        <div
+            id="lightValue"
+            class="sensor-value"
+        >
+            340 lux
+        </div>
+
+        <div
+            id="lightStatus"
+            class="sensor-status"
+        >
             Adequate
         </div>
     </div>
 
-    <div id="powerMarker" class="sensor-marker">
-        <div class="sensor-title">Computer Power</div>
-        <div id="powerValue" class="sensor-value">
+    <!-- Power overlay -->
+    <div
+        id="powerMarker"
+        class="sensor-marker"
+    >
+        <div class="sensor-title">
+            Computer Power
+        </div>
+
+        <div
+            id="powerValue"
+            class="sensor-value"
+        >
             ON · 67 W
         </div>
-        <div id="powerStatus" class="sensor-status">
+
+        <div
+            id="powerStatus"
+            class="sensor-status"
+        >
             Active
         </div>
     </div>
 
     <!-- Decision panel -->
     <aside id="decisionPanel">
-        <h2>Actionable Recommendations</h2>
+        <h2>
+            Actionable Recommendations
+        </h2>
 
         <div id="recommendations"></div>
 
@@ -101,12 +180,14 @@
         </div>
     </aside>
 
-    <!-- Scenario controls -->
+    <!-- Demonstration controls -->
     <section id="scenarioPanel">
-        <h3>Demonstration Scenarios</h3>
+        <h3>
+            Demonstration Scenarios
+        </h3>
 
         <button id="normalButton">
-            Normal
+            Normal Conditions
         </button>
 
         <button id="lowLightButton">
@@ -127,7 +208,8 @@
     </section>
 
     <div id="instructions">
-        Drag to rotate · Mouse wheel to zoom · Right-drag to pan
+        Left-drag to rotate · Mouse wheel to zoom ·
+        Right-drag to pan
     </div>
 
     <script src="app.js"></script>
