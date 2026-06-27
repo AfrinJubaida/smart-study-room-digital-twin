@@ -16,7 +16,7 @@ let scene = null;
 let camera = null;
 let roomModel = null;
 
-const MODEL_FILE = "./assets/room.compressed.ply";
+const MODEL_FILE = "./assets/Myroom.compressed.ply";
 
 // Keep this true while positioning markers.
 // Change it to false before the final recording.
@@ -567,7 +567,7 @@ function showLoadingError(error) {
     if (element) {
         element.innerHTML =
             "The room could not be loaded.<br>" +
-            "Check that assets/room.compressed.ply exists." +
+            "Check that assets/Myroom.compressed.ply exists." +
             "<br><br>" +
             message;
     }
