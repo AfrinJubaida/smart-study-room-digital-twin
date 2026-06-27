@@ -1,0 +1,298 @@
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    font-family: Arial, Helvetica, sans-serif;
+    background: #101418;
+    color: #ffffff;
+}
+
+#renderCanvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    touch-action: none;
+    outline: none;
+}
+
+#loadingScreen {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #101418;
+    text-align: center;
+}
+
+#loadingScreen.hidden {
+    display: none;
+}
+
+#loadingScreen h2 {
+    margin-bottom: 8px;
+}
+
+#loadingStatus {
+    color: #c8d1da;
+}
+
+#topBar {
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    right: 16px;
+    z-index: 20;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+
+    padding: 14px 18px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+
+    background: rgba(15, 20, 25, 0.82);
+    backdrop-filter: blur(10px);
+
+    pointer-events: none;
+}
+
+#topBar h1 {
+    margin: 0 0 4px;
+    font-size: 21px;
+}
+
+#topBar p {
+    margin: 0;
+    color: #c9d2dc;
+    font-size: 13px;
+}
+
+#liveIndicator {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-weight: bold;
+    font-size: 13px;
+}
+
+.live-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #42d97c;
+    box-shadow: 0 0 10px #42d97c;
+}
+
+.sensor-marker {
+    position: fixed;
+    z-index: 15;
+
+    min-width: 145px;
+    padding: 9px 11px;
+
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 9px;
+
+    background: rgba(12, 17, 22, 0.88);
+    backdrop-filter: blur(6px);
+
+    transform: translate(-50%, -100%);
+    pointer-events: none;
+}
+
+.sensor-marker::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: -8px;
+    transform: translateX(-50%);
+
+    border-left: 7px solid transparent;
+    border-right: 7px solid transparent;
+    border-top: 8px solid rgba(12, 17, 22, 0.88);
+}
+
+.sensor-title {
+    margin-bottom: 3px;
+    color: #cbd5df;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+}
+
+.sensor-value {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.sensor-status {
+    margin-top: 3px;
+    color: #8ee5ac;
+    font-size: 11px;
+}
+
+.sensor-marker.warning {
+    border-color: #f3bc52;
+}
+
+.sensor-marker.warning .sensor-status {
+    color: #f3bc52;
+}
+
+.sensor-marker.danger {
+    border-color: #ff7070;
+}
+
+.sensor-marker.danger .sensor-status {
+    color: #ff7070;
+}
+
+#decisionPanel {
+    position: fixed;
+    top: 104px;
+    right: 16px;
+    z-index: 20;
+
+    width: 315px;
+    max-height: 55vh;
+    overflow-y: auto;
+
+    padding: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+
+    background: rgba(15, 20, 25, 0.88);
+    backdrop-filter: blur(10px);
+}
+
+#decisionPanel h2 {
+    margin: 0 0 13px;
+    font-size: 17px;
+}
+
+.recommendation {
+    margin-bottom: 10px;
+    padding: 11px;
+
+    border-left: 4px solid #f3bc52;
+    border-radius: 6px;
+
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.recommendation.high {
+    border-left-color: #ff7070;
+}
+
+.recommendation.normal {
+    border-left-color: #42d97c;
+}
+
+.recommendation strong {
+    display: block;
+    margin-bottom: 4px;
+}
+
+.recommendation p {
+    margin: 0;
+    color: #d1d8df;
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+#lastUpdated {
+    margin-top: 11px;
+    color: #9aa7b4;
+    font-size: 11px;
+}
+
+#scenarioPanel {
+    position: fixed;
+    left: 16px;
+    bottom: 44px;
+    z-index: 25;
+
+    width: 215px;
+    padding: 13px;
+
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+
+    background: rgba(15, 20, 25, 0.88);
+    backdrop-filter: blur(10px);
+}
+
+#scenarioPanel h3 {
+    margin: 0 0 9px;
+    font-size: 14px;
+}
+
+#scenarioPanel button {
+    width: 100%;
+    margin-top: 6px;
+    padding: 8px 9px;
+
+    border: 1px solid rgba(255, 255, 255, 0.17);
+    border-radius: 6px;
+
+    background: rgba(255, 255, 255, 0.08);
+    color: white;
+
+    cursor: pointer;
+}
+
+#scenarioPanel button:hover {
+    background: rgba(255, 255, 255, 0.16);
+}
+
+#instructions {
+    position: fixed;
+    left: 50%;
+    bottom: 13px;
+    z-index: 20;
+
+    padding: 7px 12px;
+    border-radius: 20px;
+
+    background: rgba(15, 20, 25, 0.78);
+    color: #d0d8df;
+
+    font-size: 12px;
+    transform: translateX(-50%);
+    pointer-events: none;
+}
+
+@media (max-width: 850px) {
+    #decisionPanel {
+        top: auto;
+        right: 10px;
+        bottom: 10px;
+        width: 280px;
+        max-height: 42vh;
+    }
+
+    #scenarioPanel {
+        left: 10px;
+        bottom: 10px;
+        width: 180px;
+    }
+
+    #instructions {
+        display: none;
+    }
+
+    #topBar {
+        left: 10px;
+        right: 10px;
+    }
+}
