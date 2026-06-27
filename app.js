@@ -20,7 +20,7 @@ const MODEL_FILE = "./assets/room.compressed.ply";
 
 // Keep this true while positioning markers.
 // Change it to false before the final recording.
-const ENABLE_MARKER_EDITING = true;
+const ENABLE_MARKER_EDITING = false;
 
 // Marker spheres are the actual movable anchor objects.
 const markerSpheres = {};
