@@ -74,23 +74,26 @@ async function createScene() {
         "camera",
         -Math.PI / 2,
         Math.PI / 2.4,
-        5,
+        8,
         BABYLON.Vector3.Zero(),
         newScene
     );
-
+    
     camera.attachControl(canvas, true);
-
-    camera.wheelPrecision = 35;
+    
+    camera.fov =
+        BABYLON.Tools.ToRadians(55);
+    
+    camera.wheelPrecision = 60;
     camera.panningSensibility = 110;
     camera.angularSensibilityX = 800;
     camera.angularSensibilityY = 800;
-
-    camera.lowerRadiusLimit = 0.15;
-    camera.upperRadiusLimit = 30;
-
-    camera.minZ = 0.01;
-    camera.maxZ = 1000;
+    
+    camera.lowerRadiusLimit = 1;
+    camera.upperRadiusLimit = 100;
+    
+    camera.minZ = 0.05;
+    camera.maxZ = 2000;
 
     window.addEventListener("keydown", handleKeyboardMovement);
 
@@ -147,7 +150,8 @@ function focusCameraOnModel(model) {
 
     if (!boundingInfo) {
         camera.setTarget(BABYLON.Vector3.Zero());
-        camera.radius = 5;
+        // camera.radius = 5;
+        camera.radius = Math.max(largestDimension * 2.5, 3);
         return;
     }
 
