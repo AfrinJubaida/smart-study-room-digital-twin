@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Smart Study Room Digital Twin</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Babylon.js engine -->
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+
+    <!-- Babylon.js Gaussian-splat loader -->
+    <script src="https://cdn.babylonjs.com/loaders/babylon.splatFileLoader.js"></script>
+</head>
+
+<body>
+    <div id="loadingScreen">
+        <h2>Loading Smart Study Room</h2>
+        <p id="loadingStatus">Preparing Gaussian splat…</p>
+    </div>
+
+    <canvas id="renderCanvas"></canvas>
+
+    <header id="topBar">
+        <div>
+            <h1>Smart Study Room Digital Twin</h1>
+            <p>
+                Live environmental monitoring and decision support
+            </p>
+        </div>
+
+        <div id="liveIndicator">
+            <span class="live-dot"></span>
+            LIVE
+        </div>
+    </header>
+
+    <!-- Spatial sensor labels -->
+    <div id="temperatureMarker" class="sensor-marker">
+        <div class="sensor-title">Temperature</div>
+        <div id="temperatureValue" class="sensor-value">
+            23.4 °C
+        </div>
+        <div id="temperatureStatus" class="sensor-status">
+            Comfortable
+        </div>
+    </div>
+
+    <div id="humidityMarker" class="sensor-marker">
+        <div class="sensor-title">Humidity</div>
+        <div id="humidityValue" class="sensor-value">
+            47%
+        </div>
+        <div id="humidityStatus" class="sensor-status">
+            Normal
+        </div>
+    </div>
+
+    <div id="occupancyMarker" class="sensor-marker">
+        <div class="sensor-title">Occupancy</div>
+        <div id="occupancyValue" class="sensor-value">
+            2 people
+        </div>
+        <div id="occupancyStatus" class="sensor-status">
+            Occupied
+        </div>
+    </div>
+
+    <div id="lightMarker" class="sensor-marker">
+        <div class="sensor-title">Desk Lighting</div>
+        <div id="lightValue" class="sensor-value">
+            310 lux
+        </div>
+        <div id="lightStatus" class="sensor-status">
+            Adequate
+        </div>
+    </div>
+
+    <div id="powerMarker" class="sensor-marker">
+        <div class="sensor-title">Computer Power</div>
+        <div id="powerValue" class="sensor-value">
+            ON · 67 W
+        </div>
+        <div id="powerStatus" class="sensor-status">
+            Active
+        </div>
+    </div>
+
+    <!-- Decision panel -->
+    <aside id="decisionPanel">
+        <h2>Actionable Recommendations</h2>
+
+        <div id="recommendations"></div>
+
+        <div id="lastUpdated">
+            Last updated: —
+        </div>
+    </aside>
+
+    <!-- Scenario controls -->
+    <section id="scenarioPanel">
+        <h3>Demonstration Scenarios</h3>
+
+        <button id="normalButton">
+            Normal
+        </button>
+
+        <button id="lowLightButton">
+            Low Light
+        </button>
+
+        <button id="emptyRoomButton">
+            Empty Room
+        </button>
+
+        <button id="crowdedRoomButton">
+            Crowded Room
+        </button>
+
+        <button id="resetCameraButton">
+            Reset Camera
+        </button>
+    </section>
+
+    <div id="instructions">
+        Drag to rotate · Mouse wheel to zoom · Right-drag to pan
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
