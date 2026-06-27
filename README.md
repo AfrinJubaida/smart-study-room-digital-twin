@@ -157,15 +157,16 @@ To run a local copy, the project must be served through a local web server becau
 
 Example using Python:
 
-'''bash
+bash
 python -m http.server 8000
-'''
+
 
 Then open:
 
-'''text
+text
+
 http://localhost:8000
-'''
+
 
 ## Marker-Placement Mode
 
@@ -196,13 +197,10 @@ The marker spheres and gizmos are then hidden while the data overlays remain at 
 
 Room capture
      │
-     ▼
 Gaussian-splat reconstruction
      │
-     ▼
 SuperSplat cleaning and compression
      │
-     ▼
 Babylon.js browser renderer
      │
      ├── Spatial overlay projection
@@ -211,7 +209,6 @@ Babylon.js browser renderer
      │
      └── Rule-based decision engine
              │
-             ▼
        Actionable recommendations
 
 
