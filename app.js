@@ -180,12 +180,21 @@ async function createScene() {
     );
 
     try {
+        console.log(
+            "Available SceneLoader plugins:",
+            BABYLON.SceneLoader.GetPluginForExtension(".ply")
+        );
+    
         const result =
-            await BABYLON.ImportMeshAsync(
-                MODEL_FILE,
-                newScene
-            );
-
+            await BABYLON.SceneLoader.ImportMeshAsync(
+                null,
+                "./assets/",
+                "room.compressed.ply",
+                newScene,
+                null,
+                ".ply"
+        );
+    
         if (
             !result.meshes ||
             result.meshes.length === 0
@@ -194,43 +203,35 @@ async function createScene() {
                 "No Gaussian-splat mesh was returned."
             );
         }
-
+    
         roomModel =
             result.meshes.find(
                 mesh =>
                     mesh instanceof
                     BABYLON.GaussianSplattingMesh
             ) || result.meshes[0];
-
-        console.log(
-            "Loaded model:",
-            roomModel
-        );
-
+    
         console.log(
             "Gaussian splat loaded:",
             roomModel instanceof
                 BABYLON.GaussianSplattingMesh
         );
-
+    
         roomModel.position =
             BABYLON.Vector3.Zero();
-
+    
         roomModel.scaling =
             BABYLON.Vector3.One();
-
+    
         roomModel.computeWorldMatrix(true);
-
+    
         focusCameraOnModel(roomModel);
-
         createMarkerNodes(newScene);
-
+    
         if (ENABLE_MARKER_EDITING) {
-            createMarkerPlacementTools(
-                newScene
-            );
+            createMarkerPlacementTools(newScene);
         }
-
+    
         hideLoadingScreen();
     } catch (error) {
         console.error(
@@ -238,6 +239,7 @@ async function createScene() {
             error
         );
 
+    
         showLoadingError(error);
     }
 
