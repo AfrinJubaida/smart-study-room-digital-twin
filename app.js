@@ -15,7 +15,7 @@ let camera;
 let roomModel;
 
 // Change this to "./assets/room.ply" if you use PLY instead.
-const MODEL_FILE = "./assets/room.sog";
+const MODEL_FILE = "./assets/room.compressed.ply";
 
 // ==========================================================
 // 2. DIGITAL-TWIN STATE
@@ -98,40 +98,36 @@ async function createScene() {
         "Loading the Gaussian-splat room…";
 
     try {
-        const result =
-            await BABYLON.SceneLoader.ImportMeshAsync(
-                "",
-                "",
-                MODEL_FILE,
-                newScene
-            );
+    const result = await BABYLON.ImportMeshAsync(
+        MODEL_FILE,
+        newScene
+    );
 
-        if (!result.meshes || result.meshes.length === 0) {
-            throw new Error("No Gaussian-splat mesh was returned.");
-        }
-
-        roomModel =
-            result.meshes.find(mesh =>
-                mesh instanceof BABYLON.GaussianSplattingMesh
-            ) || result.meshes[0];
-
-        // Keep the model at its original transform first.
-        roomModel.position = BABYLON.Vector3.Zero();
-
-        // Automatically focus the camera on the room.
-        focusCameraOnModel(roomModel);
-
-        document
-            .getElementById("loadingScreen")
-            .classList.add("hidden");
-    } catch (error) {
-        console.error(error);
-
-        document.getElementById("loadingStatus").innerHTML =
-            "The room could not be loaded.<br>" +
-            "Check that assets/room.sog exists.<br><br>" +
-            error.message;
+    if (!result.meshes || result.meshes.length === 0) {
+        throw new Error("No Gaussian-splat mesh was returned.");
     }
+
+    roomModel =
+        result.meshes.find(
+            mesh =>
+                mesh instanceof BABYLON.GaussianSplattingMesh
+        ) || result.meshes[0];
+
+    roomModel.position = BABYLON.Vector3.Zero();
+
+    focusCameraOnModel(roomModel);
+
+    document
+        .getElementById("loadingScreen")
+        .classList.add("hidden");
+} catch (error) {
+    console.error(error);
+
+    document.getElementById("loadingStatus").innerHTML =
+        "The room could not be loaded.<br>" +
+        "Check that assets/room.compressed.ply exists.<br><br>" +
+        error.message;
+}
 
     setupButtons();
     updateDisplay();
