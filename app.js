@@ -1,34 +1,28 @@
 "use strict";
 
 // ==========================================================
-// 1. CANVAS AND BABYLON ENGINE
+// 1. BABYLON ENGINE
 // ==========================================================
 
 const canvas = document.getElementById("renderCanvas");
 
-const engine = new BABYLON.Engine(
-    canvas,
-    true,
-    {
-        preserveDrawingBuffer: true,
-        stencil: true,
-        adaptToDeviceRatio: true
-    }
-);
+const engine = new BABYLON.Engine(canvas, true, {
+    preserveDrawingBuffer: true,
+    stencil: true,
+    adaptToDeviceRatio: true
+});
 
 let scene = null;
 let camera = null;
 let roomModel = null;
 
-// Must exactly match the file in your GitHub assets folder.
 const MODEL_FILE = "./assets/room.compressed.ply";
 
-// Keep true while placing markers.
-// Change to false before recording the final demonstration.
+// Keep this true while positioning markers.
+// Change it to false before the final recording.
 const ENABLE_MARKER_EDITING = true;
 
-// Temporary marker-editing objects.
-const markerNodes = {};
+// Marker spheres are the actual movable anchor objects.
 const markerSpheres = {};
 
 let gizmoManager = null;
@@ -47,191 +41,89 @@ const defaultState = {
     power: 67
 };
 
-let twinState = {
-    ...defaultState
-};
-
+let twinState = { ...defaultState };
 let simulationMode = "normal";
 
 // ==========================================================
-// 3. INITIAL MARKER POSITIONS
+// 3. INITIAL MARKER COORDINATES
 //
-// These are temporary positions.
-// Move them using the coloured spheres and gizmo.
-// After placement, print and save the final coordinates.
+// Replace these values later with the coordinates printed
+// after you move all five coloured spheres.
 // ==========================================================
 
 const markerPositions = {
-    temperature: new BABYLON.Vector3(
-        0,
-        1.5,
-        0
-    ),
-
-    humidity: new BABYLON.Vector3(
-        -1.5,
-        1.5,
-        0
-    ),
-
-    occupancy: new BABYLON.Vector3(
-        1.8,
-        1.4,
-        1
-    ),
-
-    light: new BABYLON.Vector3(
-        0.8,
-        1.6,
-        -1
-    ),
-
-    power: new BABYLON.Vector3(
-        0.3,
-        1.1,
-        -0.8
-    )
+    temperature: new BABYLON.Vector3(0, 1.5, 0),
+    humidity: new BABYLON.Vector3(-1.5, 1.5, 0),
+    occupancy: new BABYLON.Vector3(1.8, 1.4, 1),
+    light: new BABYLON.Vector3(0.8, 1.6, -1),
+    power: new BABYLON.Vector3(0.3, 1.1, -0.8)
 };
 
-// HTML elements used as the visible sensor cards.
 const markerElements = {
-    temperature:
-        document.getElementById(
-            "temperatureMarker"
-        ),
-
-    humidity:
-        document.getElementById(
-            "humidityMarker"
-        ),
-
-    occupancy:
-        document.getElementById(
-            "occupancyMarker"
-        ),
-
-    light:
-        document.getElementById(
-            "lightMarker"
-        ),
-
-    power:
-        document.getElementById(
-            "powerMarker"
-        )
+    temperature: document.getElementById("temperatureMarker"),
+    humidity: document.getElementById("humidityMarker"),
+    occupancy: document.getElementById("occupancyMarker"),
+    light: document.getElementById("lightMarker"),
+    power: document.getElementById("powerMarker")
 };
 
 // ==========================================================
-// 4. CREATE THE BABYLON SCENE
+// 4. CREATE SCENE
 // ==========================================================
 
 async function createScene() {
-    const newScene =
-        new BABYLON.Scene(engine);
+    const newScene = new BABYLON.Scene(engine);
 
-    newScene.clearColor =
-        new BABYLON.Color4(
-            0.035,
-            0.045,
-            0.055,
-            1
-        );
+    newScene.clearColor = new BABYLON.Color4(
+        0.035,
+        0.045,
+        0.055,
+        1
+    );
 
-    // ------------------------------------------------------
-    // Camera
-    // ------------------------------------------------------
+    createCamera(newScene);
 
-    camera =
-        new BABYLON.ArcRotateCamera(
-            "camera",
-            -Math.PI / 2,
-            Math.PI / 2.3,
-            12,
-            BABYLON.Vector3.Zero(),
+    setLoadingMessage("Loading the Gaussian-splat room…");
+
+    try {
+        const result = await BABYLON.ImportMeshAsync(
+            MODEL_FILE,
             newScene
         );
 
-    camera.attachControl(
-        canvas,
-        true
-    );
-
-    camera.fov =
-        BABYLON.Tools.ToRadians(45);
-
-    camera.wheelPrecision = 80;
-    camera.panningSensibility = 150;
-
-    camera.angularSensibilityX = 900;
-    camera.angularSensibilityY = 900;
-
-    camera.lowerRadiusLimit = 1;
-    camera.upperRadiusLimit = 500;
-
-    camera.minZ = 0.05;
-    camera.maxZ = 5000;
-
-    // ------------------------------------------------------
-    // Load Gaussian splat
-    // ------------------------------------------------------
-
-    setLoadingMessage(
-        "Loading the Gaussian-splat room…"
-    );
-
-    try {
-        console.log(
-            "Available SceneLoader plugins:",
-            BABYLON.SceneLoader.GetPluginForExtension(".ply")
-        );
-    
-        const result =
-            await BABYLON.SceneLoader.ImportMeshAsync(
-                null,
-                "./assets/",
-                "room.compressed.ply",
-                newScene,
-                null,
-                ".ply"
-        );
-    
-        if (
-            !result.meshes ||
-            result.meshes.length === 0
-        ) {
+        if (!result.meshes || result.meshes.length === 0) {
             throw new Error(
-                "No Gaussian-splat mesh was returned."
+                "No Gaussian-splat model was returned."
             );
         }
-    
+
         roomModel =
             result.meshes.find(
                 mesh =>
                     mesh instanceof
                     BABYLON.GaussianSplattingMesh
             ) || result.meshes[0];
-    
+
+        console.log("Loaded model:", roomModel);
+
         console.log(
             "Gaussian splat loaded:",
-            roomModel instanceof
-                BABYLON.GaussianSplattingMesh
+            roomModel instanceof BABYLON.GaussianSplattingMesh
         );
-    
-        roomModel.position =
-            BABYLON.Vector3.Zero();
-    
-        roomModel.scaling =
-            BABYLON.Vector3.One();
-    
+
+        roomModel.position = BABYLON.Vector3.Zero();
+        roomModel.scaling = BABYLON.Vector3.One();
+
         roomModel.computeWorldMatrix(true);
-    
+
         focusCameraOnModel(roomModel);
-        createMarkerNodes(newScene);
-    
+
+        createMarkerSpheres(newScene);
+
         if (ENABLE_MARKER_EDITING) {
-            createMarkerPlacementTools(newScene);
+            enableMarkerPlacement(newScene);
         }
-    
+
         hideLoadingScreen();
     } catch (error) {
         console.error(
@@ -239,7 +131,6 @@ async function createScene() {
             error
         );
 
-    
         showLoadingError(error);
     }
 
@@ -248,17 +139,56 @@ async function createScene() {
     updateDisplay();
     evaluateRecommendations();
 
-    window.setInterval(
-        updateSimulation,
-        2000
-    );
+    window.setInterval(updateSimulation, 2000);
 
     return newScene;
 }
 
 // ==========================================================
-// 5. CAMERA FOCUS
+// 5. CAMERA
 // ==========================================================
+
+function createCamera(currentScene) {
+    camera = new BABYLON.ArcRotateCamera(
+        "camera",
+        -Math.PI / 2,
+        Math.PI / 2.3,
+        12,
+        BABYLON.Vector3.Zero(),
+        currentScene
+    );
+
+    camera.attachControl(canvas, true);
+
+    camera.fov = BABYLON.Tools.ToRadians(50);
+
+    /*
+     * Smaller wheelPrecision means faster wheel zoom.
+     */
+    camera.wheelPrecision = 18;
+
+    camera.panningSensibility = 120;
+    camera.angularSensibilityX = 900;
+    camera.angularSensibilityY = 900;
+
+    /*
+     * Temporary general limits.
+     * These are updated after the model dimensions are known.
+     */
+    camera.lowerRadiusLimit = 0.1;
+    camera.upperRadiusLimit = 1000;
+
+    camera.minZ = 0.01;
+    camera.maxZ = 5000;
+
+    /*
+     * Makes right-drag panning easier.
+     */
+    camera.useNaturalPinchZoom = true;
+    camera.pinchPrecision = 50;
+    camera.panningInertia = 0.85;
+    camera.inertia = 0.85;
+}
 
 function focusCameraOnModel(model) {
     if (!model || !camera) {
@@ -267,29 +197,22 @@ function focusCameraOnModel(model) {
 
     model.computeWorldMatrix(true);
 
-    const boundingInfo =
-        model.getBoundingInfo();
+    const boundingInfo = model.getBoundingInfo();
 
     if (!boundingInfo) {
-        camera.setTarget(
-            BABYLON.Vector3.Zero()
-        );
-
-        camera.radius = 15;
-        camera.lowerRadiusLimit = 2;
+        camera.setTarget(BABYLON.Vector3.Zero());
+        camera.radius = 10;
+        camera.lowerRadiusLimit = 0.1;
         camera.upperRadiusLimit = 100;
 
         return;
     }
 
     const centre =
-        boundingInfo.boundingBox
-            .centerWorld
-            .clone();
+        boundingInfo.boundingBox.centerWorld.clone();
 
     const extent =
-        boundingInfo.boundingBox
-            .extendSizeWorld;
+        boundingInfo.boundingBox.extendSizeWorld;
 
     const largestDimension =
         Math.max(
@@ -298,41 +221,36 @@ function focusCameraOnModel(model) {
             extent.z
         ) * 2;
 
-    console.log(
-        "Room centre:",
-        centre
-    );
-
-    console.log(
-        "Room size:",
-        largestDimension
-    );
+    console.log("Room centre:", centre);
+    console.log("Room size:", largestDimension);
 
     camera.setTarget(centre);
 
-    camera.radius =
-        Math.max(
-            largestDimension * 4,
-            12
-        );
+    /*
+     * Start outside the whole room,
+     * but not excessively far away.
+     */
+    camera.radius = Math.max(
+        largestDimension * 2.2,
+        5
+    );
 
-    camera.alpha =
-        -Math.PI / 2;
+    camera.alpha = -Math.PI / 2;
+    camera.beta = Math.PI / 2.25;
 
-    camera.beta =
-        Math.PI / 2.25;
+    /*
+     * This fixes the earlier zoom problem.
+     * The camera may now move much closer to the room.
+     */
+    camera.lowerRadiusLimit = Math.max(
+        largestDimension * 0.01,
+        0.05
+    );
 
-    camera.lowerRadiusLimit =
-        Math.max(
-            largestDimension * 0.35,
-            1.5
-        );
-
-    camera.upperRadiusLimit =
-        Math.max(
-            largestDimension * 12,
-            100
-        );
+    camera.upperRadiusLimit = Math.max(
+        largestDimension * 10,
+        100
+    );
 
     console.log(
         "Starting camera radius:",
@@ -346,104 +264,47 @@ function focusCameraOnModel(model) {
 }
 
 function resetCamera() {
-    if (!roomModel) {
-        return;
+    if (roomModel) {
+        focusCameraOnModel(roomModel);
     }
-
-    focusCameraOnModel(roomModel);
 }
 
 // ==========================================================
-// 6. CREATE MARKER NODES
+// 6. CREATE MOVABLE MARKER SPHERES
 //
-// The HTML cards follow these TransformNodes.
-// In editing mode, coloured spheres are attached to them.
+// The spheres are temporary placement handles.
+// The data labels follow their positions.
 // ==========================================================
 
-function createMarkerNodes(currentScene) {
-    Object.entries(
-        markerPositions
-    ).forEach(
+function createMarkerSpheres(currentScene) {
+    const markerColors = {
+        temperature: new BABYLON.Color3(1, 0.2, 0.2),
+        humidity: new BABYLON.Color3(0.2, 0.55, 1),
+        occupancy: new BABYLON.Color3(0.75, 0.25, 1),
+        light: new BABYLON.Color3(1, 0.85, 0.15),
+        power: new BABYLON.Color3(0.2, 1, 0.4)
+    };
+
+    Object.entries(markerPositions).forEach(
         ([name, position]) => {
-            const node =
-                new BABYLON.TransformNode(
-                    `${name}MarkerNode`,
+            const sphere =
+                BABYLON.MeshBuilder.CreateSphere(
+                    `${name}MarkerSphere`,
+                    {
+                        diameter: getMarkerDiameter()
+                    },
                     currentScene
                 );
 
-            node.position.copyFrom(
-                position
-            );
+            /*
+             * The sphere itself stores the world coordinates.
+             * This fixes the earlier issue where unchanged parent
+             * TransformNode values were printed.
+             */
+            sphere.position.copyFrom(position);
 
-            markerNodes[name] =
-                node;
-        }
-    );
-}
-
-// ==========================================================
-// 7. TEMPORARY MARKER-PLACEMENT TOOLS
-// ==========================================================
-
-function createMarkerPlacementTools(
-    currentScene
-) {
-    const markerColors = {
-        temperature:
-            new BABYLON.Color3(
-                1,
-                0.2,
-                0.2
-            ),
-
-        humidity:
-            new BABYLON.Color3(
-                0.2,
-                0.55,
-                1
-            ),
-
-        occupancy:
-            new BABYLON.Color3(
-                0.75,
-                0.25,
-                1
-            ),
-
-        light:
-            new BABYLON.Color3(
-                1,
-                0.85,
-                0.15
-            ),
-
-        power:
-            new BABYLON.Color3(
-                0.2,
-                1,
-                0.4
-            )
-    };
-
-    Object.entries(
-        markerNodes
-    ).forEach(
-        ([name, node]) => {
-            const sphere =
-                BABYLON.MeshBuilder
-                    .CreateSphere(
-                        `${name}MarkerSphere`,
-                        {
-                            diameter: 0.12
-                        },
-                        currentScene
-                    );
-
-            sphere.parent = node;
-            sphere.position =
-                BABYLON.Vector3.Zero();
-
-            sphere.isPickable = true;
+            sphere.isPickable =
+                ENABLE_MARKER_EDITING;
 
             sphere.metadata = {
                 markerName: name
@@ -461,141 +322,162 @@ function createMarkerPlacementTools(
             material.emissiveColor =
                 markerColors[name];
 
-            material.disableLighting =
-                true;
+            material.disableLighting = true;
 
-            sphere.material =
-                material;
+            material.alpha =
+                ENABLE_MARKER_EDITING ? 1 : 0;
 
-            markerSpheres[name] =
-                sphere;
+            sphere.material = material;
+
+            /*
+             * Invisible final anchor spheres still exist so that
+             * the HTML labels can follow their coordinates.
+             */
+            sphere.visibility =
+                ENABLE_MARKER_EDITING ? 1 : 0;
+
+            markerSpheres[name] = sphere;
         }
     );
+}
 
+function getMarkerDiameter() {
+    if (!roomModel) {
+        return 0.12;
+    }
+
+    const boundingInfo =
+        roomModel.getBoundingInfo();
+
+    if (!boundingInfo) {
+        return 0.12;
+    }
+
+    const extent =
+        boundingInfo.boundingBox.extendSizeWorld;
+
+    const largestDimension =
+        Math.max(
+            extent.x,
+            extent.y,
+            extent.z
+        ) * 2;
+
+    /*
+     * Marker size scales with the room.
+     */
+    return Math.max(
+        largestDimension * 0.018,
+        0.06
+    );
+}
+
+// ==========================================================
+// 7. MARKER PLACEMENT GIZMO
+// ==========================================================
+
+function enableMarkerPlacement(currentScene) {
     gizmoManager =
-        new BABYLON.GizmoManager(
-            currentScene
-        );
+        new BABYLON.GizmoManager(currentScene);
 
-    gizmoManager.positionGizmoEnabled =
-        true;
+    gizmoManager.positionGizmoEnabled = true;
+    gizmoManager.rotationGizmoEnabled = false;
+    gizmoManager.scaleGizmoEnabled = false;
+    gizmoManager.boundingBoxGizmoEnabled = false;
 
-    gizmoManager.rotationGizmoEnabled =
-        false;
+    /*
+     * We attach it ourselves after a sphere is clicked.
+     */
+    gizmoManager.usePointerToAttachGizmos = false;
 
-    gizmoManager.scaleGizmoEnabled =
-        false;
+    if (gizmoManager.gizmos.positionGizmo) {
+        gizmoManager.gizmos
+            .positionGizmo
+            .updateGizmoRotationToMatchAttachedMesh = false;
 
-    gizmoManager.boundingBoxGizmoEnabled =
-        false;
+        gizmoManager.gizmos
+            .positionGizmo
+            .scaleRatio = 1;
+    }
 
-    gizmoManager.usePointerToAttachGizmos =
-        false;
-
-    currentScene
-        .onPointerObservable
-        .add(pointerInfo => {
+    currentScene.onPointerObservable.add(
+        pointerInfo => {
             if (
                 pointerInfo.type !==
-                BABYLON.PointerEventTypes
-                    .POINTERPICK
+                BABYLON.PointerEventTypes.POINTERPICK
             ) {
                 return;
             }
 
             const pickedMesh =
-                pointerInfo
-                    .pickInfo
-                    ?.pickedMesh;
+                pointerInfo.pickInfo?.pickedMesh;
 
             const markerName =
-                pickedMesh
-                    ?.metadata
-                    ?.markerName;
+                pickedMesh?.metadata?.markerName;
 
             if (!markerName) {
                 return;
             }
 
-            selectMarkerForPlacement(
-                markerName
-            );
-        });
-
-    console.log(
-        "Marker placement mode is enabled."
+            selectMarkerForPlacement(markerName);
+        }
     );
 
     console.log(
-        "Click a coloured sphere, then drag the X, Y or Z gizmo arrow."
+        "Marker editing enabled. Click a coloured sphere."
     );
 }
 
-function selectMarkerForPlacement(
-    markerName
-) {
-    const node =
-        markerNodes[markerName];
+function selectMarkerForPlacement(markerName) {
+    const sphere = markerSpheres[markerName];
 
-    if (
-        !node ||
-        !gizmoManager
-    ) {
+    if (!sphere || !gizmoManager) {
         return;
     }
 
-    selectedMarkerName =
-        markerName;
+    selectedMarkerName = markerName;
 
-    gizmoManager.attachToNode(
-        node
-    );
+    /*
+     * Attach directly to the movable sphere.
+     */
+    gizmoManager.attachToMesh(sphere);
 
     console.log(
         `Selected marker: ${markerName}`
     );
 
     console.log(
-        "Position:",
-        node.position.x.toFixed(3),
-        node.position.y.toFixed(3),
-        node.position.z.toFixed(3)
+        "Current position:",
+        sphere.position.x.toFixed(3),
+        sphere.position.y.toFixed(3),
+        sphere.position.z.toFixed(3)
     );
 }
 
 // ==========================================================
-// 8. PRINT FINAL MARKER COORDINATES
+// 8. PRINT AND COPY MARKER COORDINATES
 // ==========================================================
 
 function printAllMarkerCoordinates() {
     const coordinates = {};
 
-    Object.entries(
-        markerNodes
-    ).forEach(
-        ([name, node]) => {
+    Object.entries(markerSpheres).forEach(
+        ([name, sphere]) => {
+            /*
+             * Use the actual absolute position of the sphere.
+             */
+            const position =
+                sphere.getAbsolutePosition();
+
             coordinates[name] = {
-                x: Number(
-                    node.position.x
-                        .toFixed(3)
-                ),
-
-                y: Number(
-                    node.position.y
-                        .toFixed(3)
-                ),
-
-                z: Number(
-                    node.position.z
-                        .toFixed(3)
-                )
+                x: Number(position.x.toFixed(3)),
+                y: Number(position.y.toFixed(3)),
+                z: Number(position.z.toFixed(3))
             };
         }
     );
 
-    console.table(
-        coordinates
-    );
+    console.table(coordinates);
 
     const generatedCode = `
 const markerPositions = {
@@ -631,9 +513,7 @@ const markerPositions = {
 };
 `;
 
-    console.log(
-        generatedCode
-    );
+    console.log(generatedCode);
 
     if (
         navigator.clipboard &&
@@ -646,30 +526,32 @@ const markerPositions = {
                     "Marker coordinate code copied to clipboard."
                 );
             })
-            .catch(() => {
-                console.log(
-                    "Copy the coordinates manually from the console."
+            .catch(error => {
+                console.warn(
+                    "Automatic copy failed. Copy it manually:",
+                    error
                 );
             });
     }
 }
 
 // ==========================================================
-// 9. LOADING SCREEN HELPERS
+// 9. LOADING SCREEN
 // ==========================================================
 
 function setLoadingMessage(message) {
-    document.getElementById(
-        "loadingStatus"
-    ).textContent = message;
+    const element =
+        document.getElementById("loadingStatus");
+
+    if (element) {
+        element.textContent = message;
+    }
 }
 
 function hideLoadingScreen() {
     document
-        .getElementById(
-            "loadingScreen"
-        )
-        .classList
+        .getElementById("loadingScreen")
+        ?.classList
         .add("hidden");
 }
 
@@ -679,17 +561,20 @@ function showLoadingError(error) {
             ? error.message
             : String(error);
 
-    document.getElementById(
-        "loadingStatus"
-    ).innerHTML =
-        "The room could not be loaded.<br>" +
-        "Check that assets/room.compressed.ply exists." +
-        "<br><br>" +
-        message;
+    const element =
+        document.getElementById("loadingStatus");
+
+    if (element) {
+        element.innerHTML =
+            "The room could not be loaded.<br>" +
+            "Check that assets/room.compressed.ply exists." +
+            "<br><br>" +
+            message;
+    }
 }
 
 // ==========================================================
-// 10. SENSOR SIMULATION
+// 10. SIMULATED LIVE DATA
 // ==========================================================
 
 function noise(amount) {
@@ -698,17 +583,10 @@ function noise(amount) {
     ) * amount;
 }
 
-function clamp(
-    value,
-    minimum,
-    maximum
-) {
+function clamp(value, minimum, maximum) {
     return Math.max(
         minimum,
-        Math.min(
-            maximum,
-            value
-        )
+        Math.min(maximum, value)
     );
 }
 
@@ -731,9 +609,7 @@ function updateSimulation() {
             break;
 
         default:
-            simulationMode =
-                "normal";
-
+            simulationMode = "normal";
             updateNormalScenario();
     }
 
@@ -742,35 +618,28 @@ function updateSimulation() {
 }
 
 function updateNormalScenario() {
-    twinState.temperature =
-        clamp(
-            twinState.temperature +
-                noise(0.08),
-            20,
-            25
-        );
+    twinState.temperature = clamp(
+        twinState.temperature + noise(0.08),
+        20,
+        25
+    );
 
-    twinState.humidity =
-        clamp(
-            twinState.humidity +
-                noise(0.3),
-            35,
-            58
-        );
+    twinState.humidity = clamp(
+        twinState.humidity + noise(0.3),
+        35,
+        58
+    );
 
-    twinState.light =
-        clamp(
-            twinState.light +
-                noise(5),
-            300,
-            500
-        );
+    twinState.light = clamp(
+        twinState.light + noise(5),
+        300,
+        500
+    );
 
     twinState.power =
         twinState.deviceOn
             ? clamp(
-                twinState.power +
-                    noise(1.2),
+                twinState.power + noise(1.2),
                 55,
                 80
             )
@@ -780,117 +649,103 @@ function updateNormalScenario() {
 function updateLowLightScenario() {
     twinState.occupancy = 2;
 
-    twinState.light =
-        clamp(
-            twinState.light +
-                noise(4),
-            130,
-            220
-        );
+    twinState.light = clamp(
+        twinState.light + noise(4),
+        130,
+        220
+    );
 
-    twinState.temperature =
-        clamp(
-            twinState.temperature +
-                noise(0.05),
-            21,
-            25
-        );
+    twinState.temperature = clamp(
+        twinState.temperature + noise(0.05),
+        21,
+        25
+    );
 
-    twinState.humidity =
-        clamp(
-            twinState.humidity +
-                noise(0.2),
-            40,
-            55
-        );
+    twinState.humidity = clamp(
+        twinState.humidity + noise(0.2),
+        40,
+        55
+    );
 }
 
 function updateEmptyRoomScenario() {
     twinState.occupancy = 0;
     twinState.deviceOn = true;
 
-    twinState.power =
-        clamp(
-            twinState.power +
-                noise(1),
-            60,
-            75
-        );
+    twinState.power = clamp(
+        twinState.power + noise(1),
+        60,
+        75
+    );
 
-    twinState.light =
-        clamp(
-            twinState.light +
-                noise(3),
-            80,
-            160
-        );
+    twinState.light = clamp(
+        twinState.light + noise(3),
+        80,
+        160
+    );
 }
 
 function updateCrowdedRoomScenario() {
     twinState.occupancy = 4;
 
-    twinState.temperature =
-        clamp(
-            twinState.temperature +
-                0.08 +
-                noise(0.03),
-            26,
-            28.5
-        );
+    twinState.temperature = clamp(
+        twinState.temperature +
+            0.08 +
+            noise(0.03),
+        26,
+        28.5
+    );
 
-    twinState.humidity =
-        clamp(
-            twinState.humidity +
-                0.15 +
-                noise(0.1),
-            61,
-            70
-        );
+    twinState.humidity = clamp(
+        twinState.humidity +
+            0.15 +
+            noise(0.1),
+        61,
+        70
+    );
 
-    twinState.light =
-        clamp(
-            twinState.light +
-                noise(4),
-            250,
-            380
-        );
+    twinState.light = clamp(
+        twinState.light + noise(4),
+        250,
+        380
+    );
 }
 
 // ==========================================================
-// 11. UPDATE SENSOR DISPLAY
+// 11. UPDATE DISPLAY
 // ==========================================================
 
 function updateDisplay() {
-    document.getElementById(
-        "temperatureValue"
-    ).textContent =
-        `${twinState.temperature.toFixed(1)} °C`;
+    setText(
+        "temperatureValue",
+        `${twinState.temperature.toFixed(1)} °C`
+    );
 
-    document.getElementById(
-        "humidityValue"
-    ).textContent =
-        `${twinState.humidity.toFixed(0)}%`;
+    setText(
+        "humidityValue",
+        `${twinState.humidity.toFixed(0)}%`
+    );
 
-    document.getElementById(
-        "occupancyValue"
-    ).textContent =
+    setText(
+        "occupancyValue",
         `${twinState.occupancy} ${
             twinState.occupancy === 1
                 ? "person"
                 : "people"
-        }`;
+        }`
+    );
 
-    document.getElementById(
-        "lightValue"
-    ).textContent =
-        `${twinState.light.toFixed(0)} lux`;
+    setText(
+        "lightValue",
+        `${twinState.light.toFixed(0)} lux`
+    );
 
-    document.getElementById(
-        "powerValue"
-    ).textContent =
+    setText(
+        "powerValue",
         twinState.deviceOn
             ? `ON · ${twinState.power.toFixed(0)} W`
-            : "OFF · 0 W";
+            : "OFF · 0 W"
+    );
 
     updateTemperatureStatus();
     updateHumidityStatus();
@@ -898,12 +753,18 @@ function updateDisplay() {
     updateLightStatus();
     updatePowerStatus();
 
-    document.getElementById(
-        "lastUpdated"
-    ).textContent =
-        `Last updated: ${
-            new Date().toLocaleTimeString()
-        }`;
+    setText(
+        "lastUpdated",
+        `Last updated: ${new Date().toLocaleTimeString()}`
+    );
+}
+
+function setText(id, text) {
+    const element = document.getElementById(id);
+
+    if (element) {
+        element.textContent = text;
+    }
 }
 
 function updateTemperatureStatus() {
@@ -940,19 +801,11 @@ function updateOccupancyStatus() {
     let message = "Occupied";
     let level = "normal";
 
-    if (
-        twinState.occupancy === 0
-    ) {
-        message =
-            "Unoccupied";
-    } else if (
-        twinState.occupancy >= 4
-    ) {
-        message =
-            "High occupancy";
-
-        level =
-            "warning";
+    if (twinState.occupancy === 0) {
+        message = "Unoccupied";
+    } else if (twinState.occupancy >= 4) {
+        message = "High occupancy";
+        level = "warning";
     }
 
     setSensorStatus(
@@ -986,16 +839,10 @@ function updatePowerStatus() {
     let level = "normal";
 
     if (wastingEnergy) {
-        message =
-            "Potential energy waste";
-
-        level =
-            "danger";
-    } else if (
-        twinState.deviceOn
-    ) {
-        message =
-            "Active";
+        message = "Potential energy waste";
+        level = "danger";
+    } else if (twinState.deviceOn) {
+        message = "Active";
     }
 
     setSensorStatus(
@@ -1013,6 +860,10 @@ function setSensorStatus(
     const marker =
         markerElements[sensor];
 
+    if (!marker) {
+        return;
+    }
+
     marker.classList.remove(
         "warning",
         "danger"
@@ -1022,14 +873,13 @@ function setSensorStatus(
         level === "warning" ||
         level === "danger"
     ) {
-        marker.classList.add(
-            level
-        );
+        marker.classList.add(level);
     }
 
-    document.getElementById(
-        `${sensor}Status`
-    ).textContent = message;
+    setText(
+        `${sensor}Status`,
+        message
+    );
 }
 
 // ==========================================================
@@ -1044,15 +894,9 @@ function evaluateRecommendations() {
         twinState.light < 300
     ) {
         recommendations.push({
-            priority:
-                "Medium priority",
-
-            level:
-                "",
-
-            action:
-                "Increase desk lighting",
-
+            priority: "Medium priority",
+            level: "",
+            action: "Increase desk lighting",
             reason:
                 "The occupied workspace is receiving " +
                 `${twinState.light.toFixed(0)} lux.`
@@ -1065,15 +909,10 @@ function evaluateRecommendations() {
         twinState.power > 10
     ) {
         recommendations.push({
-            priority:
-                "High priority",
-
-            level:
-                "high",
-
+            priority: "High priority",
+            level: "high",
             action:
                 "Turn off unused computer equipment",
-
             reason:
                 "The room is empty while the computer " +
                 `is consuming ${twinState.power.toFixed(0)} W.`
@@ -1085,69 +924,42 @@ function evaluateRecommendations() {
         twinState.temperature > 25.5
     ) {
         recommendations.push({
-            priority:
-                "High priority",
-
-            level:
-                "high",
-
+            priority: "High priority",
+            level: "high",
             action:
                 "Increase ventilation or cooling",
-
             reason:
-                `Room temperature is ${
-                    twinState.temperature.toFixed(1)
-                } °C with ${
-                    twinState.occupancy
-                } occupants.`
+                `Room temperature is ` +
+                `${twinState.temperature.toFixed(1)} °C ` +
+                `with ${twinState.occupancy} occupants.`
         });
     }
 
-    if (
-        twinState.humidity > 60
-    ) {
+    if (twinState.humidity > 60) {
         recommendations.push({
-            priority:
-                "Medium priority",
-
-            level:
-                "",
-
-            action:
-                "Improve room ventilation",
-
+            priority: "Medium priority",
+            level: "",
+            action: "Improve room ventilation",
             reason:
-                `Relative humidity has reached ${
-                    twinState.humidity.toFixed(0)
-                }%.`
+                `Relative humidity has reached ` +
+                `${twinState.humidity.toFixed(0)}%.`
         });
     }
 
-    if (
-        recommendations.length === 0
-    ) {
+    if (recommendations.length === 0) {
         recommendations.push({
-            priority:
-                "Normal",
-
-            level:
-                "normal",
-
+            priority: "Normal",
+            level: "normal",
             action:
                 "No immediate intervention required",
-
             reason:
-                "Current comfort, lighting, occupancy " +
-                "and energy conditions are within the " +
-                "configured operating ranges."
+                "Current environmental and energy " +
+                "conditions are within the configured limits."
         });
     }
 
     renderRecommendations(
-        recommendations.slice(
-            0,
-            3
-        )
+        recommendations.slice(0, 3)
     );
 }
 
@@ -1159,132 +971,95 @@ function renderRecommendations(
             "recommendations"
         );
 
+    if (!container) {
+        return;
+    }
+
     container.innerHTML = "";
 
     recommendations.forEach(
         recommendation => {
             const card =
-                document.createElement(
-                    "div"
-                );
+                document.createElement("div");
 
             card.className =
-                `recommendation ${
-                    recommendation.level
-                }`;
+                `recommendation ${recommendation.level}`;
 
             const title =
-                document.createElement(
-                    "strong"
-                );
+                document.createElement("strong");
 
             title.textContent =
                 recommendation.action;
 
             const description =
-                document.createElement(
-                    "p"
-                );
+                document.createElement("p");
 
             description.textContent =
                 `${recommendation.priority}: ` +
                 recommendation.reason;
 
-            card.appendChild(
-                title
-            );
+            card.appendChild(title);
+            card.appendChild(description);
 
-            card.appendChild(
-                description
-            );
-
-            container.appendChild(
-                card
-            );
+            container.appendChild(card);
         }
     );
 }
 
 // ==========================================================
-// 13. SCENARIO BUTTONS
+// 13. BUTTONS AND SCENARIOS
 // ==========================================================
 
 function setupButtons() {
-    const normalButton =
-        document.getElementById(
-            "normalButton"
-        );
-
-    const lowLightButton =
-        document.getElementById(
-            "lowLightButton"
-        );
-
-    const emptyRoomButton =
-        document.getElementById(
-            "emptyRoomButton"
-        );
-
-    const crowdedRoomButton =
-        document.getElementById(
-            "crowdedRoomButton"
-        );
-
-    const resetCameraButton =
-        document.getElementById(
-            "resetCameraButton"
-        );
-
-    const printCoordinatesButton =
-        document.getElementById(
-            "printCoordinatesButton"
-        );
-
-    normalButton?.addEventListener(
-        "click",
+    addClickListener(
+        "normalButton",
         activateNormalScenario
     );
 
-    lowLightButton?.addEventListener(
-        "click",
+    addClickListener(
+        "lowLightButton",
         activateLowLightScenario
     );
 
-    emptyRoomButton?.addEventListener(
-        "click",
+    addClickListener(
+        "emptyRoomButton",
         activateEmptyRoomScenario
     );
 
-    crowdedRoomButton?.addEventListener(
-        "click",
+    addClickListener(
+        "crowdedRoomButton",
         activateCrowdedRoomScenario
     );
 
-    resetCameraButton?.addEventListener(
-        "click",
+    addClickListener(
+        "resetCameraButton",
         resetCamera
     );
 
-    printCoordinatesButton?.addEventListener(
-        "click",
+    addClickListener(
+        "printCoordinatesButton",
         printAllMarkerCoordinates
     );
 }
 
-function activateNormalScenario() {
-    simulationMode =
-        "normal";
+function addClickListener(id, handler) {
+    document
+        .getElementById(id)
+        ?.addEventListener(
+            "click",
+            handler
+        );
+}
 
-    twinState = {
-        ...defaultState
-    };
+function activateNormalScenario() {
+    simulationMode = "normal";
+    twinState = { ...defaultState };
 
     refreshDigitalTwin();
 }
 
 function activateLowLightScenario() {
-    simulationMode =
-        "lowLight";
+    simulationMode = "lowLight";
 
     twinState = {
         temperature: 23.6,
@@ -1299,8 +1074,7 @@ function activateLowLightScenario() {
 }
 
 function activateEmptyRoomScenario() {
-    simulationMode =
-        "emptyRoom";
+    simulationMode = "emptyRoom";
 
     twinState = {
         temperature: 22.8,
@@ -1315,8 +1089,7 @@ function activateEmptyRoomScenario() {
 }
 
 function activateCrowdedRoomScenario() {
-    simulationMode =
-        "crowdedRoom";
+    simulationMode = "crowdedRoom";
 
     twinState = {
         temperature: 26.8,
@@ -1336,7 +1109,7 @@ function refreshDigitalTwin() {
 }
 
 // ==========================================================
-// 14. PROJECT MARKERS INTO SCREEN SPACE
+// 14. KEEP HTML CARDS ATTACHED TO 3D MARKERS
 // ==========================================================
 
 function updateMarkerPositions() {
@@ -1355,12 +1128,10 @@ function updateMarkerPositions() {
             engine.getRenderHeight()
         );
 
-    Object.entries(
-        markerNodes
-    ).forEach(
-        ([name, node]) => {
+    Object.entries(markerSpheres).forEach(
+        ([name, sphere]) => {
             const worldPosition =
-                node.getAbsolutePosition();
+                sphere.getAbsolutePosition();
 
             const screenPosition =
                 BABYLON.Vector3.Project(
@@ -1373,7 +1144,11 @@ function updateMarkerPositions() {
             const marker =
                 markerElements[name];
 
-            const outsideDepthRange =
+            if (!marker) {
+                return;
+            }
+
+            const outsideDepth =
                 screenPosition.z < 0 ||
                 screenPosition.z > 1;
 
@@ -1386,17 +1161,14 @@ function updateMarkerPositions() {
                     engine.getRenderHeight();
 
             if (
-                outsideDepthRange ||
+                outsideDepth ||
                 outsideScreen
             ) {
-                marker.style.display =
-                    "none";
-
+                marker.style.display = "none";
                 return;
             }
 
-            marker.style.display =
-                "block";
+            marker.style.display = "block";
 
             marker.style.left =
                 `${screenPosition.x}px`;
@@ -1408,12 +1180,13 @@ function updateMarkerPositions() {
 }
 
 function hideAllMarkers() {
-    Object.values(
-        markerElements
-    ).forEach(marker => {
-        marker.style.display =
-            "none";
-    });
+    Object.values(markerElements).forEach(
+        marker => {
+            if (marker) {
+                marker.style.display = "none";
+            }
+        }
+    );
 }
 
 // ==========================================================
@@ -1424,12 +1197,10 @@ createScene()
     .then(createdScene => {
         scene = createdScene;
 
-        engine.runRenderLoop(
-            () => {
-                scene.render();
-                updateMarkerPositions();
-            }
-        );
+        engine.runRenderLoop(() => {
+            scene.render();
+            updateMarkerPositions();
+        });
     })
     .catch(error => {
         console.error(
