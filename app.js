@@ -160,32 +160,29 @@ function createCamera(currentScene) {
 
     camera.attachControl(canvas, true);
 
-    camera.fov = BABYLON.Tools.ToRadians(50);
+    camera.fov = BABYLON.Tools.ToRadians(65);
 
     /*
      * Smaller wheelPrecision means faster wheel zoom.
      */
-    camera.wheelPrecision = 18;
+    camera.wheelPrecision = 8;
 
     camera.panningSensibility = 120;
     camera.angularSensibilityX = 900;
     camera.angularSensibilityY = 900;
-
-    /*
-     * Temporary general limits.
-     * These are updated after the model dimensions are known.
-     */
-    camera.lowerRadiusLimit = 0.1;
-    camera.upperRadiusLimit = 1000;
-
-    camera.minZ = 0.01;
+    
+    camera.lowerRadiusLimit = 0.02;
+    camera.upperRadiusLimit = 100;
+    
+    camera.minZ = 0.005;
     camera.maxZ = 5000;
+
 
     /*
      * Makes right-drag panning easier.
      */
     camera.useNaturalPinchZoom = true;
-    camera.pinchPrecision = 50;
+    camera.pinchPrecision = 25;
     camera.panningInertia = 0.85;
     camera.inertia = 0.85;
 }
@@ -201,10 +198,9 @@ function focusCameraOnModel(model) {
 
     if (!boundingInfo) {
         camera.setTarget(BABYLON.Vector3.Zero());
-        camera.radius = 10;
-        camera.lowerRadiusLimit = 0.1;
-        camera.upperRadiusLimit = 100;
-
+        camera.radius = 1;
+        camera.lowerRadiusLimit = 0.05;
+        camera.upperRadiusLimit = 50;
         return;
     }
 
@@ -224,36 +220,43 @@ function focusCameraOnModel(model) {
     console.log("Room centre:", centre);
     console.log("Room size:", largestDimension);
 
+    /*
+     * Keep the orbit centre inside the room.
+     */
     camera.setTarget(centre);
 
     /*
-     * Start outside the whole room,
-     * but not excessively far away.
+     * Start inside the room rather than outside the
+     * complete Gaussian-splat bounding volume.
      */
     camera.radius = Math.max(
-        largestDimension * 2.2,
-        5
+        largestDimension * 0.12,
+        0.3
     );
 
     camera.alpha = -Math.PI / 2;
-    camera.beta = Math.PI / 2.25;
+    camera.beta = Math.PI / 2.15;
 
     /*
-     * This fixes the earlier zoom problem.
-     * The camera may now move much closer to the room.
+     * Allow close movement inside the reconstruction.
      */
     camera.lowerRadiusLimit = Math.max(
-        largestDimension * 0.01,
-        0.05
+        largestDimension * 0.005,
+        0.02
     );
 
     camera.upperRadiusLimit = Math.max(
-        largestDimension * 10,
-        100
+        largestDimension * 1.5,
+        10
+    );
+
+    camera.minZ = Math.max(
+        largestDimension * 0.0005,
+        0.005
     );
 
     console.log(
-        "Starting camera radius:",
+        "Inside-room starting radius:",
         camera.radius
     );
 
